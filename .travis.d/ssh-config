@@ -1,0 +1,7 @@
+Host target
+    User git
+    Hostname github.com
+    IdentityFile ~/.ssh/deploy-rsa
+    UserKnownHostsFile /dev/null
+    StrictHostKeyChecking no
+    IdentitiesOnly yes

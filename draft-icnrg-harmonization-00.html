@@ -1,0 +1,706 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" 
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head profile="http://www.w3.org/2006/03/hcard http://dublincore.org/documents/2008/08/04/dc-html/">
+  <meta http-equiv="Content-Type" content="text/html; charset=us-ascii" />
+
+  <title>Design Choices and Differences for NDN and CCNx 1.0 Implementations of Information-Centric Networking</title>
+
+  <style type="text/css" title="Xml2Rfc (sans serif)">
+  /*<![CDATA[*/
+	  a {
+	  text-decoration: none;
+	  }
+      /* info code from SantaKlauss at http://www.madaboutstyle.com/tooltip2.html */
+      a.info {
+          /* This is the key. */
+          position: relative;
+          z-index: 24;
+          text-decoration: none;
+      }
+      a.info:hover {
+          z-index: 25;
+          color: #FFF; background-color: #900;
+      }
+      a.info span { display: none; }
+      a.info:hover span.info {
+          /* The span will display just on :hover state. */
+          display: block;
+          position: absolute;
+          font-size: smaller;
+          top: 2em; left: -5em; width: 15em;
+          padding: 2px; border: 1px solid #333;
+          color: #900; background-color: #EEE;
+          text-align: left;
+      }
+	  a.smpl {
+	  color: black;
+	  }
+	  a:hover {
+	  text-decoration: underline;
+	  }
+	  a:active {
+	  text-decoration: underline;
+	  }
+	  address {
+	  margin-top: 1em;
+	  margin-left: 2em;
+	  font-style: normal;
+	  }
+	  body {
+	  color: black;
+	  font-family: verdana, helvetica, arial, sans-serif;
+	  font-size: 10pt;
+	  max-width: 55em;
+	  
+	  }
+	  cite {
+	  font-style: normal;
+	  }
+	  dd {
+	  margin-right: 2em;
+	  }
+	  dl {
+	  margin-left: 2em;
+	  }
+	
+	  ul.empty {
+	  list-style-type: none;
+	  }
+	  ul.empty li {
+	  margin-top: .5em;
+	  }
+	  dl p {
+	  margin-left: 0em;
+	  }
+	  dt {
+	  margin-top: .5em;
+	  }
+	  h1 {
+	  font-size: 14pt;
+	  line-height: 21pt;
+	  page-break-after: avoid;
+	  }
+	  h1.np {
+	  page-break-before: always;
+	  }
+	  h1 a {
+	  color: #333333;
+	  }
+	  h2 {
+	  font-size: 12pt;
+	  line-height: 15pt;
+	  page-break-after: avoid;
+	  }
+	  h3, h4, h5, h6 {
+	  font-size: 10pt;
+	  page-break-after: avoid;
+	  }
+	  h2 a, h3 a, h4 a, h5 a, h6 a {
+	  color: black;
+	  }
+	  img {
+	  margin-left: 3em;
+	  }
+	  li {
+	  margin-left: 2em;
+	  margin-right: 2em;
+	  }
+	  ol {
+	  margin-left: 2em;
+	  margin-right: 2em;
+	  }
+	  ol p {
+	  margin-left: 0em;
+	  }
+	  p {
+	  margin-left: 2em;
+	  margin-right: 2em;
+	  }
+	  pre {
+	  margin-left: 3em;
+	  background-color: lightyellow;
+	  padding: .25em;
+	  }
+	  pre.text2 {
+	  border-style: dotted;
+	  border-width: 1px;
+	  background-color: #f0f0f0;
+	  width: 69em;
+	  }
+	  pre.inline {
+	  background-color: white;
+	  padding: 0em;
+	  }
+	  pre.text {
+	  border-style: dotted;
+	  border-width: 1px;
+	  background-color: #f8f8f8;
+	  width: 69em;
+	  }
+	  pre.drawing {
+	  border-style: solid;
+	  border-width: 1px;
+	  background-color: #f8f8f8;
+	  padding: 2em;
+	  }
+	  table {
+	  margin-left: 2em;
+	  }
+	  table.tt {
+	  vertical-align: top;
+	  }
+	  table.full {
+	  border-style: outset;
+	  border-width: 1px;
+	  }
+	  table.headers {
+	  border-style: outset;
+	  border-width: 1px;
+	  }
+	  table.tt td {
+	  vertical-align: top;
+	  }
+	  table.full td {
+	  border-style: inset;
+	  border-width: 1px;
+	  }
+	  table.tt th {
+	  vertical-align: top;
+	  }
+	  table.full th {
+	  border-style: inset;
+	  border-width: 1px;
+	  }
+	  table.headers th {
+	  border-style: none none inset none;
+	  border-width: 1px;
+	  }
+	  table.left {
+	  margin-right: auto;
+	  }
+	  table.right {
+	  margin-left: auto;
+	  }
+	  table.center {
+	  margin-left: auto;
+	  margin-right: auto;
+	  }
+	  caption {
+	  caption-side: bottom;
+	  font-weight: bold;
+	  font-size: 9pt;
+	  margin-top: .5em;
+	  }
+	
+	  table.header {
+	  border-spacing: 1px;
+	  width: 95%;
+	  font-size: 10pt;
+	  color: white;
+	  }
+	  td.top {
+	  vertical-align: top;
+	  }
+	  td.topnowrap {
+	  vertical-align: top;
+	  white-space: nowrap; 
+	  }
+	  table.header td {
+	  background-color: gray;
+	  width: 50%;
+	  }
+	  table.header a {
+	  color: white;
+	  }
+	  td.reference {
+	  vertical-align: top;
+	  white-space: nowrap;
+	  padding-right: 1em;
+	  }
+	  thead {
+	  display:table-header-group;
+	  }
+	  ul.toc, ul.toc ul {
+	  list-style: none;
+	  margin-left: 1.5em;
+	  margin-right: 0em;
+	  padding-left: 0em;
+	  }
+	  ul.toc li {
+	  line-height: 150%;
+	  font-weight: bold;
+	  font-size: 10pt;
+	  margin-left: 0em;
+	  margin-right: 0em;
+	  }
+	  ul.toc li li {
+	  line-height: normal;
+	  font-weight: normal;
+	  font-size: 9pt;
+	  margin-left: 0em;
+	  margin-right: 0em;
+	  }
+	  li.excluded {
+	  font-size: 0pt;
+	  }
+	  ul p {
+	  margin-left: 0em;
+	  }
+	
+	  .comment {
+	  background-color: yellow;
+	  }
+	  .center {
+	  text-align: center;
+	  }
+	  .error {
+	  color: red;
+	  font-style: italic;
+	  font-weight: bold;
+	  }
+	  .figure {
+	  font-weight: bold;
+	  text-align: center;
+	  font-size: 9pt;
+	  }
+	  .filename {
+	  color: #333333;
+	  font-weight: bold;
+	  font-size: 12pt;
+	  line-height: 21pt;
+	  text-align: center;
+	  }
+	  .fn {
+	  font-weight: bold;
+	  }
+	  .hidden {
+	  display: none;
+	  }
+	  .left {
+	  text-align: left;
+	  }
+	  .right {
+	  text-align: right;
+	  }
+	  .title {
+	  color: #990000;
+	  font-size: 18pt;
+	  line-height: 18pt;
+	  font-weight: bold;
+	  text-align: center;
+	  margin-top: 36pt;
+	  }
+	  .vcardline {
+	  display: block;
+	  }
+	  .warning {
+	  font-size: 14pt;
+	  background-color: yellow;
+	  }
+	
+	
+	  @media print {
+	  .noprint {
+		display: none;
+	  }
+	
+	  a {
+		color: black;
+		text-decoration: none;
+	  }
+	
+	  table.header {
+		width: 90%;
+	  }
+	
+	  td.header {
+		width: 50%;
+		color: black;
+		background-color: white;
+		vertical-align: top;
+		font-size: 12pt;
+	  }
+	
+	  ul.toc a::after {
+		content: leader('.') target-counter(attr(href), page);
+	  }
+	
+	  ul.ind li li a {
+		content: target-counter(attr(href), page);
+	  }
+	
+	  .print2col {
+		column-count: 2;
+		-moz-column-count: 2;
+		column-fill: auto;
+	  }
+	  }
+	
+	  @page {
+	  @top-left {
+		   content: "Internet-Draft"; 
+	  } 
+	  @top-right {
+		   content: "December 2010"; 
+	  } 
+	  @top-center {
+		   content: "Abbreviated Title";
+	  } 
+	  @bottom-left {
+		   content: "Doe"; 
+	  } 
+	  @bottom-center {
+		   content: "Expires June 2011"; 
+	  } 
+	  @bottom-right {
+		   content: "[Page " counter(page) "]"; 
+	  } 
+	  }
+	
+	  @page:first { 
+		@top-left {
+		  content: normal;
+		}
+		@top-right {
+		  content: normal;
+		}
+		@top-center {
+		  content: normal;
+		}
+	  }
+  /*]]>*/
+  </style>
+
+  <link href="#rfc.toc" rel="Contents"/>
+<link href="#rfc.section.1" rel="Chapter" title="1 Introduction"/>
+<link href="#rfc.section.2" rel="Chapter" title="2 Terminology"/>
+<link href="#rfc.section.3" rel="Chapter" title="3 Background"/>
+<link href="#rfc.section.3.1" rel="Chapter" title="3.1 CCNx 0.8: Origin and Point of Commonality"/>
+<link href="#rfc.section.3.2" rel="Chapter" title="3.2 Recognized Issues with CCNx 0.8"/>
+<link href="#rfc.section.3.3" rel="Chapter" title="3.3 Summary of NDN and CCNx 1.0 Evolution"/>
+<link href="#rfc.section.4" rel="Chapter" title="4 Discussion of Individual Architecture &amp; Design Commonalities and Differences per NDN and CCNx 1.0 Development paths"/>
+<link href="#rfc.section.4.1" rel="Chapter" title="4.1 Packet encoding"/>
+<link href="#rfc.section.4.1.1" rel="Chapter" title="4.1.1 NDN"/>
+<link href="#rfc.section.4.1.2" rel="Chapter" title="4.1.2 CCNx 1.0"/>
+<link href="#rfc.section.4.2" rel="Chapter" title="4.2 Packet structure (network adaptation, link adaptation, information layers)"/>
+<link href="#rfc.section.4.2.1" rel="Chapter" title="4.2.1 NDN"/>
+<link href="#rfc.section.4.3" rel="Chapter" title="4.3 Naming"/>
+<link href="#rfc.section.4.4" rel="Chapter" title="4.4 Data retrieval"/>
+<link href="#rfc.section.4.4.1" rel="Chapter" title="4.4.1 NDN"/>
+<link href="#rfc.section.4.4.2" rel="Chapter" title="4.4.2 CCNx 1.0"/>
+<link href="#rfc.section.4.5" rel="Chapter" title="4.5 Data retrieval scoping"/>
+<link href="#rfc.section.4.5.1" rel="Chapter" title="4.5.1 NDN"/>
+<link href="#rfc.section.4.5.2" rel="Chapter" title="4.5.2 CCNx 1.0"/>
+<link href="#rfc.section.4.6" rel="Chapter" title="4.6 Opportunistic in-network caching"/>
+<link href="#rfc.section.4.6.1" rel="Chapter" title="4.6.1 NDN"/>
+<link href="#rfc.section.4.6.2" rel="Chapter" title="4.6.2 CCNx 1.0"/>
+<link href="#rfc.section.4.7" rel="Chapter" title="4.7 In-network name discovery"/>
+<link href="#rfc.section.4.7.1" rel="Chapter" title="4.7.1 NDN"/>
+<link href="#rfc.section.4.7.2" rel="Chapter" title="4.7.2 CCNx 1.0"/>
+<link href="#rfc.section.4.8" rel="Chapter" title="4.8 Forwarding Loop Management"/>
+<link href="#rfc.section.4.8.1" rel="Chapter" title="4.8.1 NDN"/>
+<link href="#rfc.section.4.8.2" rel="Chapter" title="4.8.2 CCNX 1.0"/>
+<link href="#rfc.section.4.9" rel="Chapter" title="4.9 Similar Interest Aggregation"/>
+<link href="#rfc.section.4.9.1" rel="Chapter" title="4.9.1 NDN"/>
+<link href="#rfc.section.4.9.2" rel="Chapter" title="4.9.2 CCNx 1.0"/>
+<link href="#rfc.section.4.10" rel="Chapter" title="4.10 Interest Payloads"/>
+<link href="#rfc.section.4.11" rel="Chapter" title="4.11 Data Security"/>
+<link href="#rfc.section.4.11.1" rel="Chapter" title="4.11.1 NDN"/>
+<link href="#rfc.section.4.11.2" rel="Chapter" title="4.11.2 CCNx 1.0"/>
+<link href="#rfc.section.4.12" rel="Chapter" title="4.12 Fragmentation"/>
+<link href="#rfc.section.4.13" rel="Chapter" title="4.13 Indirect data retrieval"/>
+<link href="#rfc.section.4.13.1" rel="Chapter" title="4.13.1 NDN"/>
+<link href="#rfc.section.4.13.2" rel="Chapter" title="4.13.2 CCNx 1.0"/>
+<link href="#rfc.section.4.14" rel="Chapter" title="4.14 Sync"/>
+<link href="#rfc.section.4.14.1" rel="Chapter" title="4.14.1 NDN"/>
+<link href="#rfc.section.4.14.2" rel="Chapter" title="4.14.2 CCNx 1.0"/>
+<link href="#rfc.section.5" rel="Chapter" title="5 Security Considerations"/>
+<link href="#rfc.section.6" rel="Chapter" title="6 Acknowledgements"/>
+<link href="#rfc.section.7" rel="Chapter" title="7 IANA Considerations"/>
+<link href="#rfc.references" rel="Chapter" title="8 Normative References"/>
+<link href="#rfc.authors" rel="Chapter"/>
+
+
+  <meta name="generator" content="xml2rfc version 2.5.2 - http://tools.ietf.org/tools/xml2rfc" />
+  <link rel="schema.dct" href="http://purl.org/dc/terms/" />
+
+  <meta name="dct.creator" content="Lastname, F." />
+  <meta name="dct.identifier" content="urn:ietf:id:draft-icnrg-harmonization-00" />
+  <meta name="dct.issued" scheme="ISO8601" content="2016-11" />
+  <meta name="dct.abstract" content="The purpose of this draft is to document the discussions of the ICN Harmonization Study Group regarding the architectural or design choices made in the NDN and CCNx 1.0 implementations and to describe the rationale (if any) underlying the choices.  " />
+  <meta name="description" content="The purpose of this draft is to document the discussions of the ICN Harmonization Study Group regarding the architectural or design choices made in the NDN and CCNx 1.0 implementations and to describe the rationale (if any) underlying the choices.  " />
+
+</head>
+
+<body>
+
+  <table class="header">
+    <tbody>
+    
+    	<tr>
+  <td class="left">Information-Centric Networking Research Group (ICNRG)</td>
+  <td class="right">F. Lastname</td>
+</tr>
+<tr>
+  <td class="left">Internet-Draft</td>
+  <td class="right">Affiliation</td>
+</tr>
+<tr>
+  <td class="left">Intended status: Informational</td>
+  <td class="right">November 2016</td>
+</tr>
+<tr>
+  <td class="left">Expires: May 5, 2017</td>
+  <td class="right"></td>
+</tr>
+
+    	
+    </tbody>
+  </table>
+
+  <p class="title">Design Choices and Differences for NDN and CCNx 1.0 Implementations of Information-Centric Networking<br />
+  <span class="filename">draft-icnrg-harmonization-00</span></p>
+  
+  <h1 id="rfc.abstract">
+  <a href="#rfc.abstract">Abstract</a>
+</h1>
+<p>The purpose of this draft is to document the discussions of the ICN Harmonization Study Group regarding the architectural or design choices made in the NDN and CCNx 1.0 implementations and to describe the rationale (if any) underlying the choices.  </p>
+<h1 id="rfc.status">
+  <a href="#rfc.status">Status of This Memo</a>
+</h1>
+<p>This Internet-Draft is submitted in full conformance with the provisions of BCP 78 and BCP 79.</p>
+<p>Internet-Drafts are working documents of the Internet Engineering Task Force (IETF).  Note that other groups may also distribute working documents as Internet-Drafts.  The list of current Internet-Drafts is at http://datatracker.ietf.org/drafts/current/.</p>
+<p>Internet-Drafts are draft documents valid for a maximum of six months and may be updated, replaced, or obsoleted by other documents at any time.  It is inappropriate to use Internet-Drafts as reference material or to cite them other than as "work in progress."</p>
+<p>This Internet-Draft will expire on May 5, 2017.</p>
+<h1 id="rfc.copyrightnotice">
+  <a href="#rfc.copyrightnotice">Copyright Notice</a>
+</h1>
+<p>Copyright (c) 2016 IETF Trust and the persons identified as the document authors.  All rights reserved.</p>
+<p>This document is subject to BCP 78 and the IETF Trust's Legal Provisions Relating to IETF Documents (http://trustee.ietf.org/license-info) in effect on the date of publication of this document.  Please review these documents carefully, as they describe your rights and restrictions with respect to this document.  Code Components extracted from this document must include Simplified BSD License text as described in Section 4.e of the Trust Legal Provisions and are provided without warranty as described in the Simplified BSD License.</p>
+
+  
+  <hr class="noprint" />
+  <h1 class="np" id="rfc.toc"><a href="#rfc.toc">Table of Contents</a></h1>
+  <ul class="toc">
+
+  	<li>1.   <a href="#rfc.section.1">Introduction</a></li>
+<li>2.   <a href="#rfc.section.2">Terminology</a></li>
+<li>3.   <a href="#rfc.section.3">Background</a></li>
+<ul><li>3.1.   <a href="#rfc.section.3.1">CCNx 0.8: Origin and Point of Commonality</a></li>
+<li>3.2.   <a href="#rfc.section.3.2">Recognized Issues with CCNx 0.8</a></li>
+<li>3.3.   <a href="#rfc.section.3.3">Summary of NDN and CCNx 1.0 Evolution</a></li>
+</ul><li>4.   <a href="#rfc.section.4">Discussion of Individual Architecture &amp; Design Commonalities and Differences per NDN and CCNx 1.0 Development paths</a></li>
+<ul><li>4.1.   <a href="#rfc.section.4.1">Packet encoding</a></li>
+<ul><li>4.1.1.   <a href="#rfc.section.4.1.1">NDN</a></li>
+<li>4.1.2.   <a href="#rfc.section.4.1.2">CCNx 1.0</a></li>
+</ul><li>4.2.   <a href="#rfc.section.4.2">Packet structure (network adaptation, link adaptation, information layers)</a></li>
+<ul><li>4.2.1.   <a href="#rfc.section.4.2.1">NDN</a></li>
+</ul><li>4.3.   <a href="#rfc.section.4.3">Naming</a></li>
+<li>4.4.   <a href="#rfc.section.4.4">Data retrieval</a></li>
+<ul><li>4.4.1.   <a href="#rfc.section.4.4.1">NDN</a></li>
+<li>4.4.2.   <a href="#rfc.section.4.4.2">CCNx 1.0</a></li>
+</ul><li>4.5.   <a href="#rfc.section.4.5">Data retrieval scoping</a></li>
+<ul><li>4.5.1.   <a href="#rfc.section.4.5.1">NDN</a></li>
+<li>4.5.2.   <a href="#rfc.section.4.5.2">CCNx 1.0</a></li>
+</ul><li>4.6.   <a href="#rfc.section.4.6">Opportunistic in-network caching</a></li>
+<ul><li>4.6.1.   <a href="#rfc.section.4.6.1">NDN</a></li>
+<li>4.6.2.   <a href="#rfc.section.4.6.2">CCNx 1.0</a></li>
+</ul><li>4.7.   <a href="#rfc.section.4.7">In-network name discovery</a></li>
+<ul><li>4.7.1.   <a href="#rfc.section.4.7.1">NDN</a></li>
+<li>4.7.2.   <a href="#rfc.section.4.7.2">CCNx 1.0</a></li>
+</ul><li>4.8.   <a href="#rfc.section.4.8">Forwarding Loop Management</a></li>
+<ul><li>4.8.1.   <a href="#rfc.section.4.8.1">NDN</a></li>
+<li>4.8.2.   <a href="#rfc.section.4.8.2">CCNX 1.0</a></li>
+</ul><li>4.9.   <a href="#rfc.section.4.9">Similar Interest Aggregation</a></li>
+<ul><li>4.9.1.   <a href="#rfc.section.4.9.1">NDN</a></li>
+<li>4.9.2.   <a href="#rfc.section.4.9.2">CCNx 1.0</a></li>
+</ul><li>4.10.   <a href="#rfc.section.4.10">Interest Payloads</a></li>
+<li>4.11.   <a href="#rfc.section.4.11">Data Security</a></li>
+<ul><li>4.11.1.   <a href="#rfc.section.4.11.1">NDN</a></li>
+<li>4.11.2.   <a href="#rfc.section.4.11.2">CCNx 1.0</a></li>
+</ul><li>4.12.   <a href="#rfc.section.4.12">Fragmentation</a></li>
+<li>4.13.   <a href="#rfc.section.4.13">Indirect data retrieval</a></li>
+<ul><li>4.13.1.   <a href="#rfc.section.4.13.1">NDN</a></li>
+<li>4.13.2.   <a href="#rfc.section.4.13.2">CCNx 1.0</a></li>
+</ul><li>4.14.   <a href="#rfc.section.4.14">Sync</a></li>
+<ul><li>4.14.1.   <a href="#rfc.section.4.14.1">NDN</a></li>
+<li>4.14.2.   <a href="#rfc.section.4.14.2">CCNx 1.0</a></li>
+</ul></ul><li>5.   <a href="#rfc.section.5">Security Considerations</a></li>
+<li>6.   <a href="#rfc.section.6">Acknowledgements</a></li>
+<li>7.   <a href="#rfc.section.7">IANA Considerations</a></li>
+<li>8.   <a href="#rfc.references">Normative References</a></li>
+<li><a href="#rfc.authors">Author's Address</a></li>
+
+
+  </ul>
+
+  <h1 id="rfc.section.1"><a href="#rfc.section.1">1.</a> <a href="#introduction" id="introduction">Introduction</a></h1>
+<p id="rfc.section.1.p.1">...  </p>
+<h1 id="rfc.section.2"><a href="#rfc.section.2">2.</a> <a href="#terminology" id="terminology">Terminology</a></h1>
+<p id="rfc.section.2.p.1">The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in RFC 2119.  </p>
+<p id="rfc.section.2.p.2">(TBD) Reference to terminology draft </p>
+<h1 id="rfc.section.3"><a href="#rfc.section.3">3.</a> <a href="#background" id="background">Background</a></h1>
+<h1 id="rfc.section.3.1"><a href="#rfc.section.3.1">3.1.</a> <a href="#ccnx-0.8-origin-and-point-of-commonality" id="ccnx-0.8-origin-and-point-of-commonality">CCNx 0.8: Origin and Point of Commonality</a></h1>
+<p id="rfc.section.3.1.p.1">... Common point from which the two development streams emerged circa 2013 / CCNx 0.8 Reference Implementation ...  </p>
+<p id="rfc.section.3.1.p.2">CCNx 0.8 as a common starting point </p>
+<p/>
+
+<ul>
+  <li>Binary XML format </li>
+  <li>Packet Naming <ul><li>Full name : "/foo/bar" + implicit digest </li><li>Exact name : "/foo/bar", 0 components after </li><li>Prefix name : "/foo/*", 0 or more components afterwards </li></ul><p> </p></li>
+  <li>Initial set of naming convention to carry semantics of the name component contents </li>
+  <li>Data retrieval <ul><li>Data fetching using full, exact, and prefix names </li></ul><p> </p></li>
+  <li>In-network name discovery <ul><li>with Selectors support </li><li>data packet carrying &#8220;FreshnessSecond&#8221;, a relative time the packet is considered &#8220;Fresh&#8221; </li></ul><p> </p></li>
+  <li>Opportunistic in-network caching <ul><li>Each data packet can be cached with forwarded-defined policies </li><li>&#8220;Fresh&#8221;/&#8221;stale&#8221; semantics for the cached data </li></ul><p> </p></li>
+  <li>Aggregation of similar Interests, allowing similar interests to pass through when close to lifetime expiration </li>
+  <li>Nonce in Interest packets to detect and prevent Interest packet looping </li>
+</ul>
+<h1 id="rfc.section.3.2"><a href="#rfc.section.3.2">3.2.</a> <a href="#recognized-issues-with-ccnx-0.8" id="recognized-issues-with-ccnx-0.8">Recognized Issues with CCNx 0.8</a></h1>
+<p/>
+<h1 id="rfc.section.3.3"><a href="#rfc.section.3.3">3.3.</a> <a href="#summary-of-ndn-and-ccnx-1.0-evolution" id="summary-of-ndn-and-ccnx-1.0-evolution">Summary of NDN and CCNx 1.0 Evolution</a></h1>
+<p/>
+<h1 id="rfc.section.4"><a href="#rfc.section.4">4.</a> <a href="#discussion-of-individual-architecture-design-commonalities-and-differences-per-ndn-and-ccnx-1.0-development-paths" id="discussion-of-individual-architecture-design-commonalities-and-differences-per-ndn-and-ccnx-1.0-development-paths">Discussion of Individual Architecture &amp; Design Commonalities and Differences per NDN and CCNx 1.0 Development paths</a></h1>
+<p id="rfc.section.4.p.1">... below we take in succession individual topics that capture the points where the differences between the NDN and CCNx 1.0 approaches are relevant and important to discuss. The topics listed below are taken from our prior discussions and are included for completeness only. We can reorganize, add or delete items as we see fit. The structure of each section will be the same as suggested in 4.1...  </p>
+<h1 id="rfc.section.4.1"><a href="#rfc.section.4.1">4.1.</a> <a href="#packet-encoding" id="packet-encoding">Packet encoding</a></h1>
+<p id="rfc.section.4.1.p.1">Use of TLV encodings </p>
+<h1 id="rfc.section.4.1.1"><a href="#rfc.section.4.1.1">4.1.1.</a> <a href="#ndn" id="ndn">NDN</a></h1>
+<p id="rfc.section.4.1.1.p.1">.. Details and motivation...  </p>
+<h1 id="rfc.section.4.1.2"><a href="#rfc.section.4.1.2">4.1.2.</a> <a href="#ccnx-1.0" id="ccnx-1.0">CCNx 1.0</a></h1>
+<p id="rfc.section.4.1.2.p.1">... Details and motivation ...  </p>
+<h1 id="rfc.section.4.2"><a href="#rfc.section.4.2">4.2.</a> <a href="#packet-structure-network-adaptation-link-adaptation-information-layers" id="packet-structure-network-adaptation-link-adaptation-information-layers">Packet structure (network adaptation, link adaptation, information layers)</a></h1>
+<h1 id="rfc.section.4.2.1"><a href="#rfc.section.4.2.1">4.2.1.</a> <a href="#ndn-1" id="ndn-1">NDN</a></h1>
+<p id="rfc.section.4.2.1.p.1">... Details and motivation ... ### CCNx 1.0 ... Details and motivation ...  </p>
+<h1 id="rfc.section.4.3"><a href="#rfc.section.4.3">4.3.</a> <a href="#naming" id="naming">Naming</a></h1>
+<p id="rfc.section.4.3.p.1">NDN and CCNx 1.0 has the same definitions of naming and extended it </p>
+<p/>
+
+<ul>
+  <li>Explicitly typed components </li>
+</ul>
+<p id="rfc.section.4.3.p.3">// definition of Data digest </p>
+<p id="rfc.section.4.3.p.4">In CCNx 1.0, full name combines of "Name" and "digest" but is not logically tied together </p>
+<h1 id="rfc.section.4.4"><a href="#rfc.section.4.4">4.4.</a> <a href="#data-retrieval" id="data-retrieval">Data retrieval</a></h1>
+<h1 id="rfc.section.4.4.1"><a href="#rfc.section.4.4.1">4.4.1.</a> <a href="#ndn-2" id="ndn-2">NDN</a></h1>
+<p id="rfc.section.4.4.1.p.1">Data can be retrieved by full, exact, and prefix name. NDN includes an assumption that exact names are not intentionally reused by different data </p>
+<h1 id="rfc.section.4.4.2"><a href="#rfc.section.4.4.2">4.4.2.</a> <a href="#ccnx-1.0-1" id="ccnx-1.0-1">CCNx 1.0</a></h1>
+<p id="rfc.section.4.4.2.p.1">Data can be retrieved only using full or exact name.  </p>
+<h1 id="rfc.section.4.5"><a href="#rfc.section.4.5">4.5.</a> <a href="#data-retrieval-scoping" id="data-retrieval-scoping">Data retrieval scoping</a></h1>
+<h1 id="rfc.section.4.5.1"><a href="#rfc.section.4.5.1">4.5.1.</a> <a href="#ndn-3" id="ndn-3">NDN</a></h1>
+<p id="rfc.section.4.5.1.p.1">Name based scoping using a set of naming conventions, including "/localhost" and "/localhop" </p>
+<h1 id="rfc.section.4.5.2"><a href="#rfc.section.4.5.2">4.5.2.</a> <a href="#ccnx-1.0-2" id="ccnx-1.0-2">CCNx 1.0</a></h1>
+<p id="rfc.section.4.5.2.p.1">An option to scope interest forwarding using HopLimit field </p>
+<h1 id="rfc.section.4.6"><a href="#rfc.section.4.6">4.6.</a> <a href="#opportunistic-in-network-caching" id="opportunistic-in-network-caching">Opportunistic in-network caching</a></h1>
+<p id="rfc.section.4.6.p.1">Both protocols include ability to cache each forwarded data packet with forwarded-defined policies </p>
+<h1 id="rfc.section.4.6.1"><a href="#rfc.section.4.6.1">4.6.1.</a> <a href="#ndn-4" id="ndn-4">NDN</a></h1>
+<p id="rfc.section.4.6.1.p.1">"Fresh"/"stale" semantics for the cached data (CS can keep stale packet and satisfy Interests that do not request "fresh" data) </p>
+<h1 id="rfc.section.4.6.2"><a href="#rfc.section.4.6.2">4.6.2.</a> <a href="#ccnx-1.0-3" id="ccnx-1.0-3">CCNx 1.0</a></h1>
+<p id="rfc.section.4.6.2.p.1">alive/dead semantics: Requirement that CS cannot use "dead" data to satisfy interests (current spec only) CS alive/dead decision requires absolute time synchronization within required discovery resolution Requirement for Cache verification: if Interest specifies KeyRestriction, cache cannot satisfy the interest without verification </p>
+<h1 id="rfc.section.4.7"><a href="#rfc.section.4.7">4.7.</a> <a href="#in-network-name-discovery" id="in-network-name-discovery">In-network name discovery</a></h1>
+<h1 id="rfc.section.4.7.1"><a href="#rfc.section.4.7.1">4.7.1.</a> <a href="#ndn-5" id="ndn-5">NDN</a></h1>
+<p id="rfc.section.4.7.1.p.1">Selector support </p>
+<p/>
+
+<ul>
+  <li>As a temporary mechanism to implement in-network name discovery </li>
+  <li>Open research for the adequate replacement </li>
+</ul>
+<p id="rfc.section.4.7.1.p.3">"FreshnessPeriod" in Data packets as a relative time to treat Data "fresh" for discovery purposes </p>
+<h1 id="rfc.section.4.7.2"><a href="#rfc.section.4.7.2">4.7.2.</a> <a href="#ccnx-1.0-4" id="ccnx-1.0-4">CCNx 1.0</a></h1>
+<p id="rfc.section.4.7.2.p.1">App-defined name discovery: </p>
+<p/>
+
+<ul>
+  <li>Manifests for static data </li>
+  <li>Encoding Selectors as part of the Interest name </li>
+</ul>
+<h1 id="rfc.section.4.8"><a href="#rfc.section.4.8">4.8.</a> <a href="#forwarding-loop-management" id="forwarding-loop-management">Forwarding Loop Management</a></h1>
+<h1 id="rfc.section.4.8.1"><a href="#rfc.section.4.8.1">4.8.1.</a> <a href="#ndn-6" id="ndn-6">NDN</a></h1>
+<p id="rfc.section.4.8.1.p.1">...NDN assumes networks without guarantees for loopless routing (assumes that routing either don&#8217;t exist or have high chance to result in looping paths)...  </p>
+<p id="rfc.section.4.8.1.p.2">PIT state to stop the interest from forwarding </p>
+<p id="rfc.section.4.8.1.p.3">"Nonce" to detect potentially duplicated interests with ability to prune "duplicate" paths </p>
+<p id="rfc.section.4.8.1.p.4">"HopLimit" to kill interest loops in special cases </p>
+<h1 id="rfc.section.4.8.2"><a href="#rfc.section.4.8.2">4.8.2.</a> <a href="#ccnx-1.0-5" id="ccnx-1.0-5">CCNX 1.0</a></h1>
+<p id="rfc.section.4.8.2.p.1">CCNx 1.0 assumes (but no requirements) that routing system will provide mostly loopless forwarding paths </p>
+<p id="rfc.section.4.8.2.p.2">PIT state to stop interests from forwarding further </p>
+<p id="rfc.section.4.8.2.p.3">"HopLimit" to kill loops </p>
+<h1 id="rfc.section.4.9"><a href="#rfc.section.4.9">4.9.</a> <a href="#similar-interest-aggregation" id="similar-interest-aggregation">Similar Interest Aggregation</a></h1>
+<h1 id="rfc.section.4.9.1"><a href="#rfc.section.4.9.1">4.9.1.</a> <a href="#ndn-7" id="ndn-7">NDN</a></h1>
+<p id="rfc.section.4.9.1.p.1">Exponential-back off interval to allow interest retransmission </p>
+<h1 id="rfc.section.4.9.2"><a href="#rfc.section.4.9.2">4.9.2.</a> <a href="#ccnx-1.0-6" id="ccnx-1.0-6">CCNx 1.0</a></h1>
+<p id="rfc.section.4.9.2.p.1">... Re-expressed interest detection ...  </p>
+<h1 id="rfc.section.4.10"><a href="#rfc.section.4.10">4.10.</a> <a href="#interest-payloads" id="interest-payloads">Interest Payloads</a></h1>
+<h1 id="rfc.section.4.11"><a href="#rfc.section.4.11">4.11.</a> <a href="#data-security" id="data-security">Data Security</a></h1>
+<h1 id="rfc.section.4.11.1"><a href="#rfc.section.4.11.1">4.11.1.</a> <a href="#ndn-8" id="ndn-8">NDN</a></h1>
+<p/>
+
+<ul>
+  <li>Exploring signature formats: RSA, ECDSA, HMAC </li>
+  <li>Command (Signed) Interests </li>
+  <li>Trust schema </li>
+  <li>Name based access control </li>
+</ul>
+<h1 id="rfc.section.4.11.2"><a href="#rfc.section.4.11.2">4.11.2.</a> <a href="#ccnx-1.0-7" id="ccnx-1.0-7">CCNx 1.0</a></h1>
+<p id="rfc.section.4.11.2.p.1">...  </p>
+<h1 id="rfc.section.4.12"><a href="#rfc.section.4.12">4.12.</a> <a href="#fragmentation" id="fragmentation">Fragmentation</a></h1>
+<p id="rfc.section.4.12.p.1">Hop by hop fragmentation when necessary </p>
+<h1 id="rfc.section.4.13"><a href="#rfc.section.4.13">4.13.</a> <a href="#indirect-data-retrieval" id="indirect-data-retrieval">Indirect data retrieval</a></h1>
+<h1 id="rfc.section.4.13.1"><a href="#rfc.section.4.13.1">4.13.1.</a> <a href="#ndn-9" id="ndn-9">NDN</a></h1>
+<p id="rfc.section.4.13.1.p.1">LINK object </p>
+<h1 id="rfc.section.4.13.2"><a href="#rfc.section.4.13.2">4.13.2.</a> <a href="#ccnx-1.0-8" id="ccnx-1.0-8">CCNx 1.0</a></h1>
+<p id="rfc.section.4.13.2.p.1">Special handling of Data packets that do not include "Name" field (=retrieved using data digest) </p>
+<p id="rfc.section.4.13.2.p.2">Data is matched against "restriction" field; name is completely ignored </p>
+<h1 id="rfc.section.4.14"><a href="#rfc.section.4.14">4.14.</a> <a href="#sync" id="sync">Sync</a></h1>
+<h1 id="rfc.section.4.14.1"><a href="#rfc.section.4.14.1">4.14.1.</a> <a href="#ndn-10" id="ndn-10">NDN</a></h1>
+<p id="rfc.section.4.14.1.p.1">ChronoSync, RepoSync, ChronoSync 2.0, PartialSync "refs" </p>
+<h1 id="rfc.section.4.14.2"><a href="#rfc.section.4.14.2">4.14.2.</a> <a href="#ccnx-1.0-9" id="ccnx-1.0-9">CCNx 1.0</a></h1>
+<p id="rfc.section.4.14.2.p.1">Manifest-based synchronization "refs" </p>
+<h1 id="rfc.section.5"><a href="#rfc.section.5">5.</a> <a href="#security-considerations" id="security-considerations">Security Considerations</a></h1>
+<p id="rfc.section.5.p.1">...  </p>
+<h1 id="rfc.section.6"><a href="#rfc.section.6">6.</a> <a href="#acknowledgements" id="acknowledgements">Acknowledgements</a></h1>
+<p id="rfc.section.6.p.1">...  </p>
+<h1 id="rfc.section.7"><a href="#rfc.section.7">7.</a> <a href="#iana-considerations" id="iana-considerations">IANA Considerations</a></h1>
+<p id="rfc.section.7.p.1">This document includes no request to IANA.  </p>
+<h1 id="rfc.references"><a href="#rfc.references">8.</a> Normative References</h1>
+<table>
+  <tbody>
+    <tr>
+      <td class="reference">
+        <b id="RFC2119">[RFC2119]</b>
+      </td>
+      <td class="top"><a href="mailto:sob@harvard.edu" title="Harvard University">Bradner, S.</a>, "<a href="http://tools.ietf.org/html/rfc2119">Key words for use in RFCs to Indicate Requirement Levels</a>", BCP 14, RFC 2119, March 1997.</td>
+    </tr>
+  </tbody>
+</table>
+<h1 id="rfc.authors">
+  <a href="#rfc.authors">Author's Address</a>
+</h1>
+<div class="avoidbreak">
+  <address class="vcard">
+	<span class="vcardline">
+	  <span class="fn">Firstname Lastname</span> 
+	  <span class="n hidden">
+		<span class="family-name">Lastname</span>
+	  </span>
+	</span>
+	<span class="org vcardline">Affiliation</span>
+	<span class="adr">
+	  <span class="vcardline">Address</span>
+
+	  <span class="vcardline">
+		<span class="locality">City</span>,  
+		<span class="region"></span>
+		<span class="code">ZipCode</span>
+	  </span>
+	  <span class="country-name vcardline">Country</span>
+	</span>
+	<span class="vcardline">EMail: <a href="mailto:email">email</a></span>
+
+<span class="vcardline">URI: <a href="homepage">homepage</a></span>
+
+  </address>
+</div>
+
+</body>
+</html>

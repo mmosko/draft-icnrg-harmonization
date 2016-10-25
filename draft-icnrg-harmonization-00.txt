@@ -1,0 +1,448 @@
+
+
+
+
+Information-Centric Networking Research Group (ICNRG)        F. Lastname
+Internet-Draft                                               Affiliation
+Intended status: Informational                             November 2016
+Expires: May 5, 2017
+
+
+ Design Choices and Differences for NDN and CCNx 1.0 Implementations of
+                     Information-Centric Networking
+                      draft-icnrg-harmonization-00
+
+Abstract
+
+   The purpose of this draft is to document the discussions of the ICN
+   Harmonization Study Group regarding the architectural or design
+   choices made in the NDN and CCNx 1.0 implementations and to describe
+   the rationale (if any) underlying the choices.
+
+Status of This Memo
+
+   This Internet-Draft is submitted in full conformance with the
+   provisions of BCP 78 and BCP 79.
+
+   Internet-Drafts are working documents of the Internet Engineering
+   Task Force (IETF).  Note that other groups may also distribute
+   working documents as Internet-Drafts.  The list of current Internet-
+   Drafts is at http://datatracker.ietf.org/drafts/current/.
+
+   Internet-Drafts are draft documents valid for a maximum of six months
+   and may be updated, replaced, or obsoleted by other documents at any
+   time.  It is inappropriate to use Internet-Drafts as reference
+   material or to cite them other than as "work in progress."
+
+   This Internet-Draft will expire on May 5, 2017.
+
+Copyright Notice
+
+   Copyright (c) 2016 IETF Trust and the persons identified as the
+   document authors.  All rights reserved.
+
+   This document is subject to BCP 78 and the IETF Trust's Legal
+   Provisions Relating to IETF Documents
+   (http://trustee.ietf.org/license-info) in effect on the date of
+   publication of this document.  Please review these documents
+   carefully, as they describe your rights and restrictions with respect
+   to this document.  Code Components extracted from this document must
+   include Simplified BSD License text as described in Section 4.e of
+   the Trust Legal Provisions and are provided without warranty as
+   described in the Simplified BSD License.
+
+
+
+Lastname                   Expires May 5, 2017                  [Page 1]
+
+Internet-Draft     NDN and CCNx 1.0 Design Differences     November 2016
+
+
+Table of Contents
+
+   1.  Introduction  . . . . . . . . . . . . . . . . . . . . . . . .   3
+   2.  Terminology . . . . . . . . . . . . . . . . . . . . . . . . .   3
+   3.  Background  . . . . . . . . . . . . . . . . . . . . . . . . .   3
+     3.1.  CCNx 0.8: Origin and Point of Commonality . . . . . . . .   3
+     3.2.  Recognized Issues with CCNx 0.8 . . . . . . . . . . . . .   4
+     3.3.  Summary of NDN and CCNx 1.0 Evolution . . . . . . . . . .   4
+   4.  Discussion of Individual Architecture & Design Commonalities
+       and Differences per NDN and CCNx 1.0 Development paths  . . .   4
+     4.1.  Packet encoding . . . . . . . . . . . . . . . . . . . . .   4
+       4.1.1.  NDN . . . . . . . . . . . . . . . . . . . . . . . . .   4
+       4.1.2.  CCNx 1.0  . . . . . . . . . . . . . . . . . . . . . .   4
+     4.2.  Packet structure (network adaptation, link adaptation,
+           information layers) . . . . . . . . . . . . . . . . . . .   4
+       4.2.1.  NDN . . . . . . . . . . . . . . . . . . . . . . . . .   4
+     4.3.  Naming  . . . . . . . . . . . . . . . . . . . . . . . . .   5
+     4.4.  Data retrieval  . . . . . . . . . . . . . . . . . . . . .   5
+       4.4.1.  NDN . . . . . . . . . . . . . . . . . . . . . . . . .   5
+       4.4.2.  CCNx 1.0  . . . . . . . . . . . . . . . . . . . . . .   5
+     4.5.  Data retrieval scoping  . . . . . . . . . . . . . . . . .   5
+       4.5.1.  NDN . . . . . . . . . . . . . . . . . . . . . . . . .   5
+       4.5.2.  CCNx 1.0  . . . . . . . . . . . . . . . . . . . . . .   5
+     4.6.  Opportunistic in-network caching  . . . . . . . . . . . .   5
+       4.6.1.  NDN . . . . . . . . . . . . . . . . . . . . . . . . .   5
+       4.6.2.  CCNx 1.0  . . . . . . . . . . . . . . . . . . . . . .   6
+     4.7.  In-network name discovery . . . . . . . . . . . . . . . .   6
+       4.7.1.  NDN . . . . . . . . . . . . . . . . . . . . . . . . .   6
+       4.7.2.  CCNx 1.0  . . . . . . . . . . . . . . . . . . . . . .   6
+     4.8.  Forwarding Loop Management  . . . . . . . . . . . . . . .   6
+       4.8.1.  NDN . . . . . . . . . . . . . . . . . . . . . . . . .   6
+       4.8.2.  CCNX 1.0  . . . . . . . . . . . . . . . . . . . . . .   7
+     4.9.  Similar Interest Aggregation  . . . . . . . . . . . . . .   7
+       4.9.1.  NDN . . . . . . . . . . . . . . . . . . . . . . . . .   7
+       4.9.2.  CCNx 1.0  . . . . . . . . . . . . . . . . . . . . . .   7
+     4.10. Interest Payloads . . . . . . . . . . . . . . . . . . . .   7
+     4.11. Data Security . . . . . . . . . . . . . . . . . . . . . .   7
+       4.11.1.  NDN  . . . . . . . . . . . . . . . . . . . . . . . .   7
+       4.11.2.  CCNx 1.0 . . . . . . . . . . . . . . . . . . . . . .   7
+     4.12. Fragmentation . . . . . . . . . . . . . . . . . . . . . .   7
+     4.13. Indirect data retrieval . . . . . . . . . . . . . . . . .   7
+       4.13.1.  NDN  . . . . . . . . . . . . . . . . . . . . . . . .   7
+       4.13.2.  CCNx 1.0 . . . . . . . . . . . . . . . . . . . . . .   8
+     4.14. Sync  . . . . . . . . . . . . . . . . . . . . . . . . . .   8
+       4.14.1.  NDN  . . . . . . . . . . . . . . . . . . . . . . . .   8
+       4.14.2.  CCNx 1.0 . . . . . . . . . . . . . . . . . . . . . .   8
+   5.  Security Considerations . . . . . . . . . . . . . . . . . . .   8
+   6.  Acknowledgements  . . . . . . . . . . . . . . . . . . . . . .   8
+
+
+
+Lastname                   Expires May 5, 2017                  [Page 2]
+
+Internet-Draft     NDN and CCNx 1.0 Design Differences     November 2016
+
+
+   7.  IANA Considerations . . . . . . . . . . . . . . . . . . . . .   8
+   8.  Normative References  . . . . . . . . . . . . . . . . . . . .   8
+   Author's Address  . . . . . . . . . . . . . . . . . . . . . . . .   8
+
+1.  Introduction
+
+   ...
+
+2.  Terminology
+
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
+   document are to be interpreted as described in RFC 2119.
+
+   (TBD) Reference to terminology draft
+
+3.  Background
+
+3.1.  CCNx 0.8: Origin and Point of Commonality
+
+   ... Common point from which the two development streams emerged circa
+   2013 / CCNx 0.8 Reference Implementation ...
+
+   CCNx 0.8 as a common starting point
+
+   o  Binary XML format
+
+   o  Packet Naming
+
+      *  Full name : "/foo/bar" + implicit digest
+
+      *  Exact name : "/foo/bar", 0 components after
+
+      *  Prefix name : "/foo/*", 0 or more components afterwards
+
+   o  Initial set of naming convention to carry semantics of the name
+      component contents
+
+   o  Data retrieval
+
+      *  Data fetching using full, exact, and prefix names
+
+   o  In-network name discovery
+
+      *  with Selectors support
+
+      *  data packet carrying "FreshnessSecond", a relative time the
+         packet is considered "Fresh"
+
+
+
+Lastname                   Expires May 5, 2017                  [Page 3]
+
+Internet-Draft     NDN and CCNx 1.0 Design Differences     November 2016
+
+
+   o  Opportunistic in-network caching
+
+      *  Each data packet can be cached with forwarded-defined policies
+
+      *  "Fresh"/"stale" semantics for the cached data
+
+   o  Aggregation of similar Interests, allowing similar interests to
+      pass through when close to lifetime expiration
+
+   o  Nonce in Interest packets to detect and prevent Interest packet
+      looping
+
+3.2.  Recognized Issues with CCNx 0.8
+
+3.3.  Summary of NDN and CCNx 1.0 Evolution
+
+4.  Discussion of Individual Architecture & Design Commonalities and
+    Differences per NDN and CCNx 1.0 Development paths
+
+   ... below we take in succession individual topics that capture the
+   points where the differences between the NDN and CCNx 1.0 approaches
+   are relevant and important to discuss.  The topics listed below are
+   taken from our prior discussions and are included for completeness
+   only.  We can reorganize, add or delete items as we see fit.  The
+   structure of each section will be the same as suggested in 4.1...
+
+4.1.  Packet encoding
+
+   Use of TLV encodings
+
+4.1.1.  NDN
+
+   .. Details and motivation...
+
+4.1.2.  CCNx 1.0
+
+   ... Details and motivation ...
+
+4.2.  Packet structure (network adaptation, link adaptation, information
+      layers)
+
+4.2.1.  NDN
+
+   ... Details and motivation ... ### CCNx 1.0 ... Details and
+   motivation ...
+
+
+
+
+
+
+Lastname                   Expires May 5, 2017                  [Page 4]
+
+Internet-Draft     NDN and CCNx 1.0 Design Differences     November 2016
+
+
+4.3.  Naming
+
+   NDN and CCNx 1.0 has the same definitions of naming and extended it
+
+   o  Explicitly typed components
+
+   // definition of Data digest
+
+   In CCNx 1.0, full name combines of "Name" and "digest" but is not
+   logically tied together
+
+4.4.  Data retrieval
+
+4.4.1.  NDN
+
+   Data can be retrieved by full, exact, and prefix name.  NDN includes
+   an assumption that exact names are not intentionally reused by
+   different data
+
+4.4.2.  CCNx 1.0
+
+   Data can be retrieved only using full or exact name.
+
+4.5.  Data retrieval scoping
+
+4.5.1.  NDN
+
+   Name based scoping using a set of naming conventions, including
+   "/localhost" and "/localhop"
+
+4.5.2.  CCNx 1.0
+
+   An option to scope interest forwarding using HopLimit field
+
+4.6.  Opportunistic in-network caching
+
+   Both protocols include ability to cache each forwarded data packet
+   with forwarded-defined policies
+
+4.6.1.  NDN
+
+   "Fresh"/"stale" semantics for the cached data (CS can keep stale
+   packet and satisfy Interests that do not request "fresh" data)
+
+
+
+
+
+
+
+
+Lastname                   Expires May 5, 2017                  [Page 5]
+
+Internet-Draft     NDN and CCNx 1.0 Design Differences     November 2016
+
+
+4.6.2.  CCNx 1.0
+
+   alive/dead semantics: Requirement that CS cannot use "dead" data to
+   satisfy interests (current spec only) CS alive/dead decision requires
+   absolute time synchronization within required discovery resolution
+   Requirement for Cache verification: if Interest specifies
+   KeyRestriction, cache cannot satisfy the interest without
+   verification
+
+4.7.  In-network name discovery
+
+4.7.1.  NDN
+
+   Selector support
+
+   o  As a temporary mechanism to implement in-network name discovery
+
+   o  Open research for the adequate replacement
+
+   "FreshnessPeriod" in Data packets as a relative time to treat Data
+   "fresh" for discovery purposes
+
+4.7.2.  CCNx 1.0
+
+   App-defined name discovery:
+
+   o  Manifests for static data
+
+   o  Encoding Selectors as part of the Interest name
+
+4.8.  Forwarding Loop Management
+
+4.8.1.  NDN
+
+   ...NDN assumes networks without guarantees for loopless routing
+   (assumes that routing either don't exist or have high chance to
+   result in looping paths)...
+
+   PIT state to stop the interest from forwarding
+
+   "Nonce" to detect potentially duplicated interests with ability to
+   prune "duplicate" paths
+
+   "HopLimit" to kill interest loops in special cases
+
+
+
+
+
+
+
+Lastname                   Expires May 5, 2017                  [Page 6]
+
+Internet-Draft     NDN and CCNx 1.0 Design Differences     November 2016
+
+
+4.8.2.  CCNX 1.0
+
+   CCNx 1.0 assumes (but no requirements) that routing system will
+   provide mostly loopless forwarding paths
+
+   PIT state to stop interests from forwarding further
+
+   "HopLimit" to kill loops
+
+4.9.  Similar Interest Aggregation
+
+4.9.1.  NDN
+
+   Exponential-back off interval to allow interest retransmission
+
+4.9.2.  CCNx 1.0
+
+   ... Re-expressed interest detection ...
+
+4.10.  Interest Payloads
+
+4.11.  Data Security
+
+4.11.1.  NDN
+
+   o  Exploring signature formats: RSA, ECDSA, HMAC
+
+   o  Command (Signed) Interests
+
+   o  Trust schema
+
+   o  Name based access control
+
+4.11.2.  CCNx 1.0
+
+   ...
+
+4.12.  Fragmentation
+
+   Hop by hop fragmentation when necessary
+
+4.13.  Indirect data retrieval
+
+4.13.1.  NDN
+
+   LINK object
+
+
+
+
+
+Lastname                   Expires May 5, 2017                  [Page 7]
+
+Internet-Draft     NDN and CCNx 1.0 Design Differences     November 2016
+
+
+4.13.2.  CCNx 1.0
+
+   Special handling of Data packets that do not include "Name" field
+   (=retrieved using data digest)
+
+   Data is matched against "restriction" field; name is completely
+   ignored
+
+4.14.  Sync
+
+4.14.1.  NDN
+
+   ChronoSync, RepoSync, ChronoSync 2.0, PartialSync "refs"
+
+4.14.2.  CCNx 1.0
+
+   Manifest-based synchronization "refs"
+
+5.  Security Considerations
+
+   ...
+
+6.  Acknowledgements
+
+   ...
+
+7.  IANA Considerations
+
+   This document includes no request to IANA.
+
+8.  Normative References
+
+   [RFC2119]  Bradner, S., "Key words for use in RFCs to Indicate
+              Requirement Levels", BCP 14, RFC 2119, March 1997.
+
+Author's Address
+
+   Firstname Lastname
+   Affiliation
+   Address
+   City  ZipCode
+   Country
+
+   EMail: email
+   URI:   homepage
+
+
+
+
+
+
+Lastname                   Expires May 5, 2017                  [Page 8]

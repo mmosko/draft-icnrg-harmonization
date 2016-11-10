@@ -14,54 +14,89 @@ The explicit name in a Content Object has 0 or more name components assigned by 
 
 Because names are totally ordered, one can exploit this in a name discovery protocol.  A consumer application may emit an Interest whose name is a prefix of one or more Content Objects stored at a forwarderd (or peer application).  The discovery protocol allows the consumer to walk the name tree rooted at the Interest prefix.  The consumer can as for left-most-child or right-most-child and it can also specify Exclusions that move a notional cursor through the sub-namespace.  In addition to range exclusion, an Interest may exclude individual Content Objects.  Based on the name prefix, the child direction preference, and the exclusions, a forwarder (or peer application) responds with the first Content Object in the canonical name order.  One issue that was never fully worked out is what happens when there are two different Content Objects with the same name.
 
-A CCNx 0.8 Interest is defined as Interest ::= Name, MinSuffixComponents?, MaxSuffixComponents?, PublisherPublicKeyDigest?, Exclude?, ChildSelector?, AnswerOriginKind?, Scope?, InterestLifetime?, Nonce?, FaceID?.  We discuss these parameters in the following.
+The common naming convention in CCNx 0.8 is a prefix, such as /a/b/c, followed by a version, followed by a segment number, followed by the implicit hash value: /a/b/c/version/segment/(hash_value).  The version is usually a timestamp in network byte order using the minimum number of bytes for the number, but it may be any field that sorts as per canonical order.  The segment is used to fragment a large piece of application data into several Content Objects.  It is usually a sequential number beginning at 0.  The version and segment number are indicated in the name by assuming other name components conform to UTF-8, so the version and segment number use a so-called 'name marker' whose first byte is an invalid UTF-8 code.  In CCNx 0.8, there is an ambiguity between these name markers and binary name components that are not UTF-8 and happen to begin with the same byte sequence.
+
+A CCNx 0.8 Interest is defined as Interest ::= Name, MinSuffixComponents?, MaxSuffixComponents?, PublisherPublicKeyDigest?, Exclude?, ChildSelector?, AnswerOriginKind?, Scope?, InterestLifetime?, Nonce?, FaceID?.  We discuss these parameters in the following.  The set of fields that determine if two interests are similar are (*Name*, *MinSuffixComponents*, *MaxSuffixComponents*, *PublisherPublicKeyDigest*, *Exclude*).
 
 ### Interest name matching
-An Interest has so-called 'selectors' that determine how a Content Object name matches the Interest name prefix.  The selectors are: MinSuffixComponents?, MaxSuffixComponents?, Exclude?, ChildSelector?.  These are all optional. If none are given in an Interest, the Interest will match any suffix of the Interest's name prefix (including 0 suffix components).  
+An Interest has so-called 'selectors' that determine how a Content Object name matches the Interest name prefix.  The selectors are: (*MinSuffixComponents*, *MaxSuffixComponents*, *Exclude*, *ChildSelector*).  These are all optional. If none are given in an Interest, the Interest will match any suffix of the Interest's name prefix (including 0 suffix components).  
 
 MinSuffixComponents specifies the minimum additional suffix components necessary to match and MaxSuffixComponents is similarly the maximum allowed.  An exact name would specify (1,1), that is it need the implicit hash and only the implicit hash.  A full name, which already has the implicit hash, would specify (0,0).  A typical type of discovery is the so-called Get Latest Version, where a name is understood to be of the form /a/b/c/version/segment/(hash_value).  An application emits an Interest with prefix /a/b/c with (3, 3) for the suffix components and asks for the right-most-child.  This says that the application knows that /a/b/c is the specific prefix it wants, and it only needs to discover the latest (right-most) version name component.
 
-The ChildSelector works as we have illustrated it above.  An Interest name, as limited by MinSuffixComponents and MaxSuffixComponents, will induce a totally ordered subset of names rooted at the Interest name.  They are totally ordered because they include the implicit hash terminal component and we will assume there are no collisions.  The ChildSelector defaults to left-most-child (the first of the set).  If one is only interested in the largest name name, one can specify the right-most-child.
+The ChildSelector works as we have illustrated it above.  An Interest name, as limited by MinSuffixComponents and MaxSuffixComponents, will induce a totally ordered subset of names rooted at the Interest name.  They are totally ordered because they include the implicit hash terminal component and we will assume there are no collisions.  The ChildSelector defaults to left-most-child (the first of the set).  If one is only interested in the largest name, one can specify the right-most-child.
 
 The Exlude term filters out results from the totally ordered subset of names rooted at the Interest name.  It can include 0 or more range restrictions and 0 or more singleton restrictions.  In typical use in discovery it is a single range restrictions to keep walking through the subset.  Another common usage is to exclude specific implicit hash name components because they are not the desired result (e.g. the signature is invalid).  The exclude filter only applies to the next name component after the Interest prefix.  For example, if the Interest name is /a/b/c, then the Exclude will only apply to the name component after /c.  Thus, if one wants to Get Lastest Version, the Interest name is /a/b/c and the Exclude range would apply to the version component of a name like /a/b/c/version/segment/(hash_value).
 
-There are several subtleties to walking the name space via exclusions.  One must not assume there is only one Content Object with a given exact name.  For example, due to an error or design, a given publisher might publish two Content Objects with the same exact name, or due to malice, an attacker could forge a name. 
-    Because the Exclude component only applies to the next name componet, when one performs a Get Latest Version, one needs at least two different Interests.  The first walks the name space /a/b/c with a range Exclude and the second checks for duplicate Content Objects that differ only in hash, for example /a/b/c/5/100.
+There are several subtleties to walking the name space via exclusions.  One must not assume there is only one Content Object with a given exact name.  For example, due to an error or design, a given publisher might publish two Content Objects with the same exact name, or due to malice, an attacker could forge a name.  Because the Exclude component only applies to the next name componet, when one performs a Get Latest Version, one needs at least two different Interests.  The first walks the name space /a/b/c with a range Exclude and the second checks for duplicate Content Objects that differ only in hash, for example /a/b/c/5/100.
 
-At this point, it is useful to walk through an example of name discovery.  We will use the Get Latest Version query, as that is a very common usage.
+At this point, it is useful to walk through an example of name discovery.  We will use the Get Latest Version query, as that is a very common usage.  In this example, we use a simple approach and an actual implementation may use more sophisticated algorithms to minimize the number of Interest messages.  Let's assume we have an application and it knows it wants to retrieve the latest version of /parc.com/index.html.  It knows the full name will follow the structure /parc.com/index.html/version/segment/(hash_value).  The application emits a first Interest with the prefix /parc.com/index.html and (3,3) for the min/max suffix components and asks for right-most child.  A second system on the network responds with a corresponding Content Object, such as one named /parc.com/index.html/5/100/(hash_1).  Because this response may have come from cache, the consumer issues a second Interest for /parc.com/index.html, (3,3), right-most-child, and excludes upto and including 5.  This may cause the Interest to travel further in the network and thus discover a second Content Object /parc.com/index.html/7/95/(hash_2).  The consumer would then issue a third Interest as before exluding upto and including 7.  If this Interest times out (there were not negative acknowledgements), then the consumer assumes it discovered the most recent version available in the connected network (another heuristic was if the Content Object was very recently signed, the consumer might accept it as current).  If the hash_2 version is acceptable (i.e. it verifies signature), then perhaps the consumer stops its discovery.  It may, however, want to check for duplicate names in which case it would issue another Interest for the name prefix /parc.com/index.html/7/95 and exclude the singleton name componet hash_2.  Perhaps there is a duplicate, named /parc.com/index.html/7/95/(hash_3).  At this point, the application must determine which signature it prefers (if either) or apply another application-specific criteria.  Note that there could be more than 2 duplicate names and this process could repeat with another Interest that exluces both singletons hash_2 and hash_3.
 
-... Common point from which the two development streams emerged circa 2013 / CCNx 0.8 Reference Implementation ...
+### Other Interest fields
+The PublisherPublicKeyDigest field will limit the set of matching Content Objects to those that have the specifid publisher public key digest field.  It is an exact match.  This field is usually the SHA-256 digest of the publisher's public key.
 
-CCNx 0.8 as a common starting point
+The AnswerOriginKind can restrict where a Content Object comes from.  It is a bitmask that can choose from an in-network cache (content store), a dynamically generated response by a publisher, or that allows 'stale' cache answers (see Caching below).
 
-- Binary XML format
+The scope field is limits how far an Interest may travel.  The options are: local forwarder (but not other local applications), local applications, 1 network hop, and unlimited.
 
-- Packet Naming 
+The InterestLifetime is request by the Interest issuer for how long the Interest should persist in the network (and thus be able to elicit a response).  No intermediate system is bound to honor that upper limit.  In some situations, this field was used like a subscription to get the next piece of content once it was published.  For example, a consumer has read the current temperature from a sensor, so it immediately issues a new Interest that excludes upto and including the current temperature version and asks to remain in the network for up to 10 seconds (a bit longer than the sensor period).  When the sensor creates the next Content Object 8 seconds later, there is already an Interest ready so the Content Object can move immediately.
 
-    - Full name : "/foo/bar" + implicit digest
-    - Exact name : "/foo/bar", 0 components after
-    - Prefix name : "/foo/*", 0 or more components afterwards
+The Nonce field is used to detect Interest loops.  It is a random number generated for each Interest.  Every forwarder that forwards an Interest keeps a history of Nonce values for what it considers long enough to detect loops.  If it detects a duplicate Nonce, it drops the Interest.  There were problems with Interest Aggregation combined with Nonce duplicate detection and multi-copy Interest forwarding that lead to undetected Interest drops (they were later worked around with the introduction of negative acknowledgements).
 
-- Initial set of naming convention to carry semantics of the name component contents
+The FaceID field is used by an application to request the Interest be sent to a specific peer (or group).  It only has significance on the origin system to bypass normal forwarding table lookup.
 
-- Data retrieval
-    - Data fetching using full, exact, and prefix names
+### Forwarder behavior
+A CCNx 0.8 forwarder followed these steps to forward Interests and Content Objects:
+    - Interest Processing
+        - Check for duplicate Nonce and drop if found
+        - Try to aggregate the Interest in the Pending Interest Table (PIT)
+            - If aggregated, done
+        - Try to satisfy the Interest from the local Content Store (cache).
+            - If a match found, as described above, return the corresponding Content Object
+        - Lookup in the Forwarding Information Base (FIB)
+            - If no match, drop the Interest
+        - Forward the Interest as per the FIB lookup
+    - Interest Response Timeout
+        - If this is the 1st timeout, lookup the 2nd-best FIB entry and if it exists, forward, otherwise done.
+        - If this is the 2nd timeout, lookup all remaining feasible FIB entries and send to all
+        - If this is the 3rd timeout, the Interest is unsatisfiable, drop.
+    - Content Object processing
+        - Find all Interests in the PIT that the Content Object satisfies according to the matching rules described above.
+        - Forward the Content Object along those reverse paths, then remove those PIT entries.
+        - Put the Content Object in the Content Store
+        
+The Interest processing path in a forwarder follows a two-best route then flood strategy.  Each forwarder for each name prefix in its FIB keeps an estimate of the round-trip time.  If an Interest goes unsatisifed longer than this estimate, it follows the Interest Response Timeout processing path.  The CCNx 0.x forwarder uses a kind of information foraging approach.  It will steadily decrease the RTT estimate on the best path until an Interest goes unsatisfied, which was about every 8th Interest given the decrease method.  This causes an infrequent use of the 2nd best path (as determined by RTT estimate), which updates that path's RTT estimate.  If neither the best path nor second best path yeilds a response, the forwarder will broadcast the Interest any remaining feasible FIB entries.
 
-- In-network name discovery
+The CCNx 0.x forwarder uses a set of flags on FIB entries called Child Inherit and Forward Capture.  Normally, the FIB is matched on a strict longest mathing prefix.  If the Child Inherit flag is set on a shorter prefix, it indicates that shorter prefixes should be considered feasible in addition to longer prefixes.  The Forward Capture flag on a shorter prefix indicates that no longer prefix should be used (it avoids another process from "capturing" the FIB entry by making a longer entry).  The use of these two flags has a strong interaction with the two-best route then flood forwarding strategy as they either expand or contract the set of feasible routes used in Interest forwarding and Interest timeout retransmission.
+        
+        
+### Content Store
+In CCNx 0.x, the Content Store is a non-persistent cache closely aligned with the forwarder.  A Content Object has one cache control directive, FreshnessSeconds.  This field, inside the signature envelope, is a relative time for how long a Content Object is considered 'fresh' in a Content Store.  If the field is not present, it is considered infinitely fresh.  At a forwarder, from the time a Content Object is most recently received and for the next FreshnessSeconds, the Content Object is marked as fresh.  After that period, it is marked as stale.  Normally, an Interest will only retrieve fresh Content Objects from a ContentStore, unless the AnswerOriginKind bitmask is set to include stale responses.  Note that in CCNx 0.x, a Content Object is infinitely valid, it has no hard expiry time.  The only distinction is fresh or stale.
 
-    * with Selectors support
-    * data packet carrying “FreshnessSecond”, a relative time the packet is considered “Fresh”
+### Wireformat
 
-- Opportunistic in-network caching
+The CCNx 0.x network protocol used an S-expression syntax encoded in its own proprietary binary protocol.  A full description of this format, known as CCNB, is available at http://github.com/PARC/ccnx-protocol-rfc/Historical/mosko-ccnb-02.txt.
 
-    * Each data packet can be cached with forwarded-defined policies
-    * “Fresh”/”stale” semantics for the cached data
-
-- Aggregation of similar Interests, allowing similar interests to pass through when close to lifetime expiration
-
-- Nonce in Interest packets to detect and prevent Interest packet looping
 
 ## Recognized Issues with CCNx 0.8
+
+- There is a strong preference for the published naming convention, but there is no field in an Interest that says what naming convention is used.  If an application uses a different naming convention, it may cause undesired behavior from libraries that expected the normal convention.
+
+- The use of command markers is ambiguous because binary name components may look like a command marker, especially if they are in a name component position where one would, by the normal naming convention, expect a certain field.
+
+- Freshness Seconds is problematic when two otherwise equivalent interests are forwarded by a node, where one Interest allows stale and one Interest wants fresh.  There is no way for the intermediate node to know if a response came from a stale or fresh cache entry or from the producer itself.
+
+- The CCNB wirefomat is difficult for a newcomer to understand.  Due to the strong application-layer framing, an application programmer (especially in the C library) needed to manually construct network-level packets using CCNB blocks.
+
+- The time for Interest forwarding is approximately O(1) in the PIT and approximately O(k) in the FIB, where k is the number of name components in the Interest (some strategies could reduce this to O(log k) via a binary search on the FIB).  The worst-case time for forwarding a Content Object, however, is O(n + n * m), where n is the number of PIT entries and m is the average number of exclusions per PIT entry.  This arises because in an adversarial environment an attacker could pollute the PIT with many Interest that all build off a similar name prefix, so a fowarder would need to iterate over all of them to determine if a Content Object specifically satisfied any of them.
+
+- The 2-best-then-flood forwarding strategy is too chatty.  Especially when used to request content that does not yet exist, the Interest will by definition timeout and cause retransmission over the 2nd best, then flood over the remaining FIB entries.  This results in the Content Object, when finally produced, to likewise flood over all reverse paths and end up pretty much on every node in any of the forwarding paths.  In some early applications that issued such Interests for several associated Content Objects, it caused extreme network traffic.  Later implementations allowed for less chatty forwarding.
+
+- The Child Inherit and Forward Capture flags combined with forwarding strategy (which could be one of several) combined with multipath and different length prefix registrations lead to a complex set of dependencies that is not well understood and could have unforeseen side effects especially when multiple applications are operating under the same prefix.
+
+- Measuring round trip time for Interests based on FIB prefixes and lead to unexpected behavior.  FIB prefixes can be fairly short compared to application names, so it is entirely possible that a single FIB prefix will serve several traffic flows with different RTT characteristics.  For example, one flow could be static content that has a very short RTT and another could be dynamic content that has a much longer RTT.  Averaging these values will result in a RTT estimate in the middle that does not achieve the desired Interest timeout behavior for either flow.
+
+- The combination of Interest Aggregation and Nonce duplicate detection, especially when combined with in-network Interest retransmission over multiple paths, can lead to a blackhole effect.  Imagine there are two paths from S to T.  An Interest from S travels along the first path, but times out as some intermediate node, which forwards the same Interest over the second path.  It is later dropped due to duplicate Nonce once the paths merge.  A third node, however, also sends a similar Interest over the second path and it gets aggregated with the retransmission.  That aggregated Interest will never be satisfied because it was dropped upstream due to duplicate None.
+
 
 ## Summary of NDN and CCNx 1.0 Evolution
 

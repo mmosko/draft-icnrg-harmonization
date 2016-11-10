@@ -74,7 +74,7 @@ In CCNx 0.x, the Content Store is a non-persistent cache closely aligned with th
 
 ### Wireformat
 
-The CCNx 0.x network protocol used an S-expression syntax encoded in its own proprietary binary protocol.  A full description of this format, known as CCNB, is available at http://github.com/PARC/ccnx-protocol-rfc/Historical/mosko-ccnb-02.txt.
+The CCNx 0.x network protocol used an S-expression syntax encoded in its own proprietary binary protocol.  A full description of this format, known as CCNB, is available at https://github.com/PARC/ccnx-protocol-rfc/blob/master/Historical/mosko-ccnb-02.txt.
 
 
 ## Recognized Issues with CCNx 0.8

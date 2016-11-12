@@ -52,25 +52,27 @@ The FaceID field is used by an application to request the Interest be sent to a 
 
 ### Forwarder Behavior
 A CCNx 0.8 forwarder followed these steps to forward Interests and Content Objects:
-    - Interest Processing
-        - Check for duplicate Nonce and drop if found
-        - Try to aggregate the Interest in the Pending Interest Table (PIT)
-            - If aggregated, done
-        - Try to satisfy the Interest from the local Content Store (cache).
-            - If a match found, as described above, return the corresponding Content Object
-        - Lookup in the Forwarding Information Base (FIB)
-            - If no match, drop the Interest
-        - Forward the Interest as per the FIB lookup
-    - Interest Response Timeout
-        - If this is the 1st timeout, lookup the 2nd-best FIB entry and if it exists, forward, otherwise done.
-        - If this is the 2nd timeout, lookup all remaining feasible FIB entries and send to all
-        - If this is the 3rd timeout, the Interest is unsatisfiable, drop.
-    - Content Object processing
-        - Find all Interests in the PIT that the Content Object satisfies according to the matching rules described above.
-        - Forward the Content Object along those reverse paths, then remove those PIT entries.
-        - Put the Content Object in the Content Store
-        
-The Interest processing path in a forwarder follows a two-best route then flood strategy.  Each forwarder for each name prefix in its FIB keeps an estimate of the round-trip time.  If an Interest goes unsatisfied longer than this estimate, it follows the Interest Response Timeout processing path.  The CCNx 0.x forwarder uses a kind of information foraging approach.  It will steadily decrease the RTT estimate on the best path until an Interest goes unsatisfied, which was about every 8th Interest given the decrease method.  This causes an infrequent use of the 2nd best path (as determined by RTT estimate), which updates that path's RTT estimate.  If neither the best path nor second best path yields a response, the forwarder will broadcast the Interest any remaining feasible FIB entries.
+
+- Interest Processing
+    - Check for duplicate Nonce and drop if found
+    - Try to aggregate the Interest in the Pending Interest Table (PIT)
+        - If aggregated, done
+    - Try to satisfy the Interest from the local Content Store (cache).
+        - If a match found, as described above, return the corresponding Content Object
+    - Lookup in the Forwarding Information Base (FIB)
+        - If no match, drop the Interest
+        - If forwarded, record PIT state
+    - Forward the Interest as per the FIB lookup
+- Interest Response Timeout
+    - If this is the 1st timeout, lookup the 2nd-best FIB entry and if it exists, forward, otherwise done.
+    - If this is the 2nd timeout, lookup all remaining feasible FIB entries and send to all
+    - Beyond this time, keep the Interest until Interest Lifetime expires
+- Content Object processing
+    - Find all Interests in the PIT that the Content Object satisfies according to the matching rules described above.
+    - Forward the Content Object along those reverse paths, then remove those PIT entries.
+    - If it matched at least one PIT entry, put the Content Object in the Content Store
+    
+The Interest processing path in a forwarder follows a two-best route then flood strategy.  Each forwarder for each name prefix in its FIB keeps an estimate of the round-trip time.  If an Interest goes unsatisfied longer than this estimate, it follows the Interest Response Timeout processing path.  The CCNx 0.x forwarder uses a kind of information foraging approach.  It will steadily decrease the RTT estimate used on the best path until an Interest goes unsatisfied then reset to the true estimate.  This means about every 8th Interest will trigger a send on the 2nd best path.  This infrequent use of the 2nd best path updates that path's RTT estimate.  If neither the best path nor second best path yields a response, the forwarder will broadcast the Interest any remaining feasible FIB entries.
 
 The CCNx 0.x forwarder uses a set of flags on FIB entries called Child Inherit and Forward Capture.  Normally, the FIB is matched on a strict longest matching prefix.  If the Child Inherit flag is set on a shorter prefix, it indicates that shorter prefixes should be considered feasible in addition to longer prefixes.  The Forward Capture flag on a shorter prefix indicates that no longer prefix should be used (it avoids another process from "capturing" the FIB entry by making a longer entry).  The use of these two flags has a strong interaction with the two-best route then flood forwarding strategy as they either expand or contract the set of feasible routes used in Interest forwarding and Interest timeout retransmission.
         
@@ -104,6 +106,7 @@ The CCNx 0.x network protocol used an S-expression syntax encoded in its own pro
 
 ## Summary of NDN and CCNx 1.0 Evolution
 
+### NDN Evolution
 
 ### CCNx 1.0 Evolution
 

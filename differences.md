@@ -24,7 +24,7 @@ the header length, and has a small amount of space for per-PacketType fields.
 - CCNx message: a Content Object or an Interest or an Interest Return.
 - Validation: This is two blocks, one that contains information about the validation, such as keyid and signing parameters like the crypto suite, and the actual signature.  The signature covers the CCNx message and the first block of the validation section.
 
-CCNx 1.0 uses the same packet envolve for both all CCNx messages.
+CCNx 1.0 uses the same packet envelope for both all CCNx messages.
 
 <!-- ################################################################### -->
 
@@ -134,7 +134,7 @@ PIT state to stop the interest from forwarding
 
 ### CCNX 1.0
 
-CCNx 1.0 uses a HopLimit field in the fixed header of Interest packets.  This field restricts an Interest to at most 255 hops, so a loop will eventually terminate.  An Interest loop would likely terminate faster than that because once it completes its first cycle it would either find a Pending Interest Table entry that aggregates it (suppressing forwarding it) or it finds a ContentStore entry that satisfies it.  The vunlerability to longer loops occurs when PIT entries get satisfied faster than the loop period and the Content Object is either not cachable or a node has no cache or its cache entry gets evicted too fast.
+CCNx 1.0 uses a HopLimit field in the fixed header of Interest packets.  This field restricts an Interest to at most 255 hops, so a loop will eventually terminate.  An Interest loop would likely terminate faster than that because once it completes its first cycle it would either find a Pending Interest Table entry that aggregates it (suppressing forwarding it) or it finds a ContentStore entry that satisfies it.  The vulnerability to longer loops occurs when PIT entries get satisfied faster than the loop period and the Content Object is either not cachable or a node has no cache or its cache entry gets evicted too fast.
 
 CCNx 1.0 also recommends decrementing the Interest Lifetime by an appropriate amount at each hop, which also serves to limit looping.
 
@@ -198,7 +198,7 @@ Validation can be a MIC, MAC, or Signature.  We allow formats like a CRC, an HMA
 
 Validation only covers the Message and the ValidationAlg, not the optional headers or fixed header.
 
-CCNx 1.0 allows signing Interests.  This is usually to allow a CRC on Interest to protect against in-network corruption.  However, the Interest may be signed via a stronger signature within an application usage.  CCNx does not recommend signing or processing signed Interess when the application protocol is not expecting such, as this is a computational denial of service vector.
+CCNx 1.0 allows signing Interests.  This is usually to allow a CRC on Interest to protect against in-network corruption.  However, the Interest may be signed via a stronger signature within an application usage.  CCNx does not recommend signing or processing signed Interest when the application protocol is not expecting such, as this is a computational denial of service vector.
 
 The CCNx KeyExchange (CCNxKE) protocol (see https://tools.ietf.org/html/draft-wood-icnrg-ccnxkeyexchange-01) is an on-line key exchange protocol similar to TLS 1.3 to negotiate encryption keys.  We believe this form of session security is intrinsically useful and should be supported within an ICN, even though other forms of off-line publishing encryption may be used in other cases.
 

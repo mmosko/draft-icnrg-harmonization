@@ -18,13 +18,14 @@ CCNx 1.0 uses a TLV packet format.  It allocates 2 bytes for the Type and 2 byte
 The 2+2 format is inefficient bit-wise because many fields are under 255 bytes and we use maybe a dozen types, not thousands of types.  To address this, we have proposed two additional protocols, though these are not part of the standard.  The first is a compression protocol that is more efficient than even a protocol that can use 1 or 2 byte T and L fields (https://www.ietf.org/proceedings/94/slides/slides-94-icnrg-0.pdf).  One reason for this is that in a series of Content Objects, it can compress out other repeated fields, such as parts of the name, long cryptographic key digests, and repeated TLV blocks like the Validation Algorithms section.  The second is an encoding for 802.15.4 (or other small data environments) called the "1+0" TLV format because it uses only 1 byte for both the T and the L in many cases (see https://www.ietf.org/mail-archive/web/icnrg/current/pdfs9ieLPWcJI.pdf).
 
 A packet contains four sections:
-- Fixed header: specifies a forwarder behavior (PacketType), the total packet length,
+
+- Fixed header: A fixed length header that specifies a forwarder behavior (PacketType), the total packet length,
 the header length, and has a small amount of space for per-PacketType fields.
 - Per-hop headers: A list of TLVs that are outside the signature envelope and are thus mutable.  These are used for network layer adaptation (see next item) or fields that need to change in flight, such as a remaining lifetime field.
-- CCNx message: a Content Object or an Interest or an Interest Return.
-- Validation: This is two blocks, one that contains information about the validation, such as keyid and signing parameters like the crypto suite, and the actual signature.  The signature covers the CCNx message and the first block of the validation section.
+- CCNx message: A TLV container for a Content Object or an Interest or an Interest Return.
+- Validation: This is two TLV blocks, one that contains information about the validation, such as keyid and signing parameters like the crypto suite, and another that has the actual signature.  The signature covers the CCNx message and the first block of the validation section.
 
-CCNx 1.0 uses the same packet envelope for both all CCNx messages.
+CCNx 1.0 uses the same packet envelope for all CCNx messages.
 
 <!-- ################################################################### -->
 
@@ -152,6 +153,7 @@ Exponential-back off interval to allow interest retransmission
 
 
 CCNx 1.0 recommends this interest aggregation algorithm:
+
 - Two Interests are considered 'similar' if they have the same Name,
       KeyIdRestr, and ObjHashRestr.
 - Let the notional value InterestExpiry (a local value at the
@@ -207,7 +209,8 @@ The CCNx KeyExchange (CCNxKE) protocol (see https://tools.ietf.org/html/draft-wo
 
 ## Fragmentation
 
-Hop by hop fragmentation when necessary
+Both NDN and CCNx use hop-by-hop fragmentation, though the specific details on
+the fragmentation protocol differ.
 
 <!-- ################################################################### -->
 
